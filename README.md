@@ -150,7 +150,7 @@ v0.5.8: July 14, 2018
  - Writes full threshold determination calculations to each REM phase sheet for transparency/debugging
  - Included this handy-dandy README file!
 
-================================
-
+<sub>
 Peever Lab, 2019
 Jeffrey Wang
+</sub>
