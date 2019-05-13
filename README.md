@@ -1,8 +1,6 @@
 # EMG Analysis and Twitch Characterization
 MATLAB application for mouse EMG analysis and REM sleep muscle characterization
 
-===============================
-
 # Table of Contents:
 
 1. Description
@@ -13,8 +11,6 @@ MATLAB application for mouse EMG analysis and REM sleep muscle characterization
 6. Editing Parameters
 7. Release Log
 
-===============================
-
 # 1. Description
 
 This program takes in a .mat file of sleep recordings and analyzes EMG data of each REM phase,
@@ -22,15 +18,11 @@ characterizing all twitches that occur in REM sleep.
 
 The information is outputted into an xlsx spreadsheet for subsequent analysis.
 
-===============================
-
 # 2. Installation
 
-	1. Launch application installer.
-	2. Follow instructions; it may ask to download and install MATLAB runtime for you if you do not have it already
-	3. Launch EMGanalysis.exe file.
-
-================================
+1. Launch application installer.
+2. Follow instructions; it may ask to download and install MATLAB runtime for you if you do not have it already
+3. Launch EMGanalysis.exe file.
 
 # 3. How to Use
 
@@ -56,8 +48,6 @@ and the corrent "title" for the EMG channel. If the sub-requirements of (b) and/
 Once the file is successfully read in, the application will move to calculating all sleep phases and
 characterizing twitches. Once the application displays that it has completed the file(s), you may open the xlsx spreadsheets. Opening before the application is finished calculations will prevent it from continuing to write to the sheets and cause a fatal error. Once all files are completely analyzed, you may have the application analyze more or enter 'q' to quit.
 
-================================
-
 # 4. Methodology
 
 When files have been selected for analysis, the application will sequentially analyze each file. Only when it has completed analysis for one file does the application move to the next file. When moving to the next file, if the program encounters an unsolvable error, as in bad file or missing channels, it will either prompt you for the correct solution or print a warning message and move to the next file without prompt.
@@ -73,11 +63,11 @@ For each file, the application does the following:
 * Creates a summarization of data for the whole REM phase
 * Exports data into a sheet in an xlsx document that follows <EMG file name>-output.xlsx and is located in the same folder as the EMG file
 
-## (a) REM Isolation Method
+### (a) REM Isolation Method
 
 To identify and isolate REM phases in the dataset, the application runs through the Sleep Epochs information channel (to simplify the amount of data it must iterate over).	The application identifies groups of Epochs labeled 'R' and determines their corresponding start and end times. This allows the application to align the Epochs as accurately as possible to the correct set of EMG data points. Each REM Phase's corresponding EMG data points are stored in their own arrays.
 
-## (b) Threshold Determination Method
+### (b) Threshold Determination Method
 
 The application preferentially uses the "window" method; failing to succeed in determining a reasonable threshold, the application will then use the "percentile" method.
 
@@ -104,8 +94,6 @@ As the application examines each "window", if the "window" fails to pass, the "p
 in a list. When the program resorts to this method, it takes the SAMPLE_PERCENTILE-th percentile of these failed "thresholds"
 to set as the final threshold value. The default is to take the 50th percentile.
 
-================================
-
 # 5. Output File
 
 The application exports all data into a xlsx spreadsheet named <EMG file name>-output.xlsx in the same location as the
@@ -123,8 +111,6 @@ It is formatted as the following:
 * The Parameters used for the file
 * The full list of calculations used in the "window" method for threshold determination for transparency/debugging	
 
-================================
-
 # 6. Editing Parameters
 
 The Parameters that can be customized are located in "parameters.config" which MUST be located in the same folder as this application's executable and CANNOT be renamed to anything other than "parameters.config". You can open and edit the config file in any word processing file (notepad is simplest) This is the only location in which these parameters may be edited. Once the application is launched, for as long as the application is running continuously, it will use the parameters as they were when the application was started. If the parameters are subsequently changed, they do not take effect until you restart the application.
@@ -132,9 +118,7 @@ The Parameters that can be customized are located in "parameters.config" which M
 It is IMPORTANT that the parameter names are not changed and that there is always EXACTLY 1 space before and after the =
 for each parameter!
 
-================================
-
-7. Release Log
+# 7. Release Log
 
 v0.8.0: May 13, 2019
    - Implemented characterization choice between neck, masseter or all
