@@ -41,23 +41,25 @@ class ParameterError(Exception):
 		
 
 def validateParameters():
-	if  not isinstance(BASELINE_PERCENTILE, float) or BASELINE_PERCENTILE < 0 or BASELINE_PERCENTILE > 100:
+	if  not (isinstance(BASELINE_PERCENTILE, float) or isinstance(BASELINE_PERCENTILE, int)) or \
+			BASELINE_PERCENTILE < 0 or BASELINE_PERCENTILE > 100:
 		raise ParameterError("BASELINE_PERCENTILE","Must be between 0 and 100, inclusive")
 	if  not isinstance(FIRST_TIME, int) or FIRST_TIME <= 0:
 		raise ParameterError("FIRST_TIME","Must be a positive, non-zero integer")
-	if  not isinstance(REM_MEAN, float) or REM_MEAN < 0:
+	if  not (isinstance(REM_MEAN, float) or isinstance(REM_MEAN, int)) or REM_MEAN < 0:
 		raise ParameterError("REM_MEAN","Must be a non-negative number")
-	if not isinstance(SAMPLE_MEAN, float) or SAMPLE_MEAN < 0:
+	if not (isinstance(SAMPLE_MEAN, float) or isinstance(SAMPLE_MEAN, int)) or SAMPLE_MEAN < 0:
 		raise ParameterError("SAMPLE_MEAN","Must be a non-negative number")
-	if not isinstance(REM_STD, float) or REM_STD < 0:
+	if not (isinstance(REM_STD, float) or isinstance(REM_STD, int)) or REM_STD < 0:
 		raise ParameterError("REM_STD","Must be a non-negative number")
-	if not isinstance(SAMPLE_STD, float) or SAMPLE_STD < 0:
+	if not (isinstance(SAMPLE_STD, float) or isinstance(SAMPLE_STD, int)) or SAMPLE_STD < 0:
 		raise ParameterError("SAMPLE_STD","Must be a non-negative number")
-	if not isinstance(TWITCH_THRESHOLD, float) or TWITCH_THRESHOLD < 0:	
+	if not (isinstance(TWITCH_THRESHOLD, float) or isinstance(TWITCH_THRESHOLD, int)) or TWITCH_THRESHOLD < 0:	
 		raise ParameterError("TWITCH_THRESHOLD","Must be a non-negative number")
-	if not isinstance(SAMPLE_THRESHOLD, float) or SAMPLE_THRESHOLD < 0:	
+	if not (isinstance(SAMPLE_THRESHOLD, float) or isinstance(SAMPLE_THRESHOLD, int)) or SAMPLE_THRESHOLD < 0:	
 		raise ParameterError("SAMPLE_THRESHOLD","Must be a non-negative number")
-	if not isinstance(SAMPLE_PERCENTILE, float) or SAMPLE_PERCENTILE < 0 or SAMPLE_PERCENTILE > 1:	
+	if not (isinstance(SAMPLE_PERCENTILE, float) or isinstance(SAMPLE_PERCENTILE, int)) or \
+			SAMPLE_PERCENTILE < 0 or SAMPLE_PERCENTILE > 1:	
 		raise ParameterError("SAMPLE_PERCENTILE","Must be between 0 and 1, inclusive")
 	if not isinstance(MIN_INTERVAL_TIME, int) or SAMPLE_PERCENTILE < 0:	
 		raise ParameterError("MIN_INTERVAL_TIME","Must be a non-negative integer")
