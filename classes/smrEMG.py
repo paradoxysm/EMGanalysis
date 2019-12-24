@@ -6,6 +6,8 @@ from parameters import *
 
 
 class smrEMG(DataObject):
+	standard = ".mat files exported by Spike2 v7"
+
 	def __init__(self, filepath, name=""):
 		super().__init__(filepath, name=name)
 		
