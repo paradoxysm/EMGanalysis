@@ -1,4 +1,4 @@
-#Do not change any parameter names
+#DO NOT change any parameter names
 
 #Percentile to take for setting "threshold" of given window: Between 0 and 100, inclusive
 BASELINE_PERCENTILE = 99.99
@@ -29,3 +29,28 @@ SAMPLE_PERCENTILE = 0.5
 
 #Minimim time (in ms) between spikes to be registered as separate twitches: Must be a non-negative integer
 MIN_INTERVAL_TIME = 20
+
+#Validation Function
+#DO NOT edit the function
+def validateParameters():
+	if !isinstance(BASELINE_PERCENTILE, float) or BASELINE_PERCENTILE < 0 or BASELINE_PERCENTILE > 100:
+		return False
+	if !isinstance(FIRST_TIME, int) or FIRST_TIME <= 0:
+		return False
+	if !isinstance(REM_MEAN, float) or REM_MEAN < 0:
+		return False
+	if !isinstance(SAMPLE_MEAN, float) or SAMPLE_MEAN < 0:
+		return False
+	if !isinstance(REM_STD, float) or REM_STD < 0:
+		return False
+	if !isinstance(SAMPLE_STD, float) or SAMPLE_STD < 0:
+		return False
+	if !isinstance(TWITCH_THRESHOLD, float) or TWITCH_THRESHOLD < 0:	
+		return False
+	if !isinstance(SAMPLE_THRESHOLD, float) or SAMPLE_THRESHOLD < 0:	
+		return False
+	if !isinstance(SAMPLE_PERCENTILE, float) or SAMPLE_PERCENTILE < 0 or SAMPLE_PERCENTILE > 1:	
+		return False
+	if !isinstance(MIN_INTERVAL_TIME, int) or SAMPLE_PERCENTILE < 0:	
+		return False
+	return True
