@@ -1,6 +1,8 @@
-from dataobject import *
+from .dataobject import *
 from scipy.io import loadmat
 import numpy as np
+
+from parameters import *
 
 class ChannelError(Exception):
 	def __init__(self, c, channels, message):
@@ -9,9 +11,7 @@ class ChannelError(Exception):
 		self.message = message
 		
 class ChannelNotImplementedError(Exception):
-	def __init__(self, c, channels, message):
-		self.c = c
-		self.channels = channels
+	def __init__(self, message):
 		self.message = message
 
 
@@ -22,10 +22,12 @@ class smrEMG(DataObject):
 		self.scoreChannel = ""
 		self.scores = np.zeros(0)
 		self.times = np.zeros(0)
+		self.first_samples
+		self.min_interval
 		
 	def read(self):
 		if self.channel == "" or self.scoreChannel == "":
-			raise NotImplementedError("EMG channel or score channel has not been specified")
+			raise ChannelNotImplementedError("EMG channel or score channel has not been specified")
 		try:
 			matfile = loadmat(filepath)
 		except:
@@ -38,7 +40,7 @@ class smrEMG(DataObject):
 					self.length = matfile[field][0][0][7]
 				elif self.scoreChannel == matfile[field][0][0][0][0]:
 					self.scores = matfile[field][0][0][7]
-					self.times = matfile[field[0][0][5]
+					self.times = matfile[field][0][0][5]
 		if self.data.size == 0 or self.scores.size == 0 or self.times.size == 0:
 			channels = []
 			for field in matfile.keys():
@@ -48,6 +50,11 @@ class smrEMG(DataObject):
 			else:
 				raise ChannelError(self.scoreChannel, channels, "Score channel not found")
 		self.data = np.absolute(self.data)
+		try:
+			self.first_samples = FIRST_TIME / (self.resolution * 1000)
+			self.min_interval = MIN_INTERVAL_TIME / (self.resolution * 1000)
+		except:
+			raise RuntimeError("Something went wrong setting up parameters for data")
 		
 	def selectChannel(self, channel):
 		self.channel = str(channel)
