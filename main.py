@@ -10,14 +10,15 @@ from parameters import *
 from classes.dataobject import *
 
 class Analyzer:
-	def __init__(self, dataobject):
+	def __init__(self, dataobject, filetypes):
 		self.module = import_module("classes." + dataobject)
 		self.dataobject = getattr(module, dataobject)
+		self.filetypes = filetypes
 		self.root = tk.Tk()
 		self.root.withdraw()
 		
 	def __str__(self):
-		return type(self).__name__ + ": " + self.dataobject
+		return type(self).__name__ + ": " + self.dataobject.__name__
 
 	def defaultQuitPrompt(self):
 		user = ""
@@ -31,8 +32,10 @@ class Analyzer:
 	def selectFiles(self):
 		file_paths = []
 		while len(file_paths) == 0:
-			print("Select .mat files to analyze")
-			file_paths = self.root.tk.splitlist(filedialog.askopenfilenames(title="Choose Files", filetypes=[("MAT-files","*.mat")]))
+			print("Select files to analyze")
+			print("This analyzer is configured according to the specifications of", self.dataobject.__name__)
+			print("This specification accepts", self.dataobject.standard)
+			file_paths = self.root.tk.splitlist(filedialog.askopenfilenames(title="Choose Files", filetypes=self.filetypes))
 			if len(file_paths) == 0:
 				self.defaultQuitPrompt()
 				print("Try again!")
@@ -176,7 +179,6 @@ class Analyzer:
 			exit()
 		print("Successfully loaded parameters")
 
-		
 		file_paths = selectFiles()
 		
 		for file in file_paths:
