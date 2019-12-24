@@ -25,8 +25,11 @@ class smrEMG(DataObject):
 		
 	def read(self):
 		if self.channel == "" or self.scoreChannel == "":
-			raise NotImplementedError( "EMG channel or score channel has not been specified" )
-		matfile = loadmat(filepath)
+			raise NotImplementedError("EMG channel or score channel has not been specified")
+		try:
+			matfile = loadmat(filepath)
+		except:
+			raise FileNotFoundError("No such file or directory: " + filepath)
 		for field in matfile.keys():
 			if '_Ch' in field:
 				if self.channel == matfile[field][0][0][0][0]:
