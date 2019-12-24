@@ -5,6 +5,9 @@ from importlib import import_module
 import tkinter as tk
 from tkinter import filedialog
 from math import floor
+from xlwt import Workbook
+from xlrd import open_workbook
+from xlutils.copy import copy
 
 from parameters import *
 from classes.dataobject import *
@@ -149,6 +152,7 @@ class Analyzer:
 					'event%':length/(rem[1]-rem[0]+1),'base%':1-length/(rem[1]-rem[0]+1)
 					}
 		if length > 0:
+			MIN_INTERVAL = MIN_INTERVAL_TIME / (resolution * 1000)
 			event = np.array([peaks[0]])
 			for i in tqdm(range(1, length+1)):
 				if peaks[i,0] - event[-1][0] < MIN_INTERVAL and i < length:
@@ -165,8 +169,94 @@ class Analyzer:
 		print("Found", analysis['num_events'], "twitches")
 		return analysis		
 	
-	def export(self):
-		pass
+	def selectExportLocation(self):
+		location = None
+		while location is None:
+			print("Select export location")
+			location = filedialog.askdirectory(title="Choose Folder")
+			if location is None or not os.path.isdir(location):
+				location = None
+				self.defaultQuitPrompt()
+				print("Try again!")
+		print("Analysis will be exported to", location)
+		return location
+	
+	def export(self, location="", i=-1, analysis={}, method="", threshold_rem=-1, checks={}, below_avg=-1):
+		if location == "" or i == -1 or len(analysis) == 0 or method == "" or threshold_rem == -1 or len(checks) == 0 or below_avg == -1:
+			raise TypeError("Not enough arguments to properly export data")
+		print("Formatting REM episode for export to", location)
+		events_header = np.array([['Event Start (s)','Avg Amplitude','Summation','Duration (s)']])
+		events_data = np.stack((analysis['event_starts'], analysis['avg_amp'], analysis['int_amp'], analysis['durations']), axis=1)
+		rem_stats = np.array([['Threshold','Number of Events','Avg Amplitude below Threshold'],
+							[threshold_rem, analysis['num_events'], below_avg]])
+		time = analysis['end'] - analysis['start']
+		rem_duration = np.array([['Start Time (s)', analysis['start']],
+								['End Time (s)', analysis['end']],
+								['Total Duration (s)', time]])
+		event_stats = np.array([['Event Percent', 'Event Time (s)'], [analysis['event%'], analysis['event%']*time],
+								['Baseline Percent', 'Baseline Time (s)'], [analysis['base%'], analysis['base%']*time]])
+		parameter_stats = np.array([['Threshold Percentile', 'Threshold Interval', 'Twich Mean Multiplier', 
+								'Twitch SD Multiplier', 'Sample Mean Multiplier', 'Sample SD Multiplier',
+								'Twitch Ratio', 'Sample Ratio', 'Sample Percentile', 'Minimum Interval Time'],
+								[BASELINE_PERCENTILE, FIRST_TIME, REM_MEAN, REM_STD, SAMPLE_MEAN, SAMPLE_STD, 
+								TWITCH_THRESHOLD, SAMPLE_THRESHOLD, SAMPLE_PERCENTILE, MIN_INTERVAL_TIME]])
+		if method == "Window" or method == "Percentile":
+			method_stats = np.array([['Method', method]])
+			checks_header = np.array(['Window Threshold', 'Window Mean', 'Window STD','Window Check',
+										'Phase Mean', 'Phase STD', 'Phase Check', 'Window Ratio','Phase Ratio']
+			checks_stats = np.stack((checks['thresholds'], checks['rem_means'], checks['rem_stds'],
+										checks['twitch_checks'], checks['sample_means'], checks['sample_stds'],
+										checks['sample_checks'], checks['twitch_ratios'], check['sample_ratios']), axis=1)
+		else:
+			raise RuntimeError("Something went wrong with the method type!")
+		
+		
+		print("Exporting to", location)
+		if not os.path.isfile(location):
+			wb = Workbook()
+			wb.save(exportpath)
+		rb = open_workbook(location)
+		wb = copy(rb)
+		ws = wb.add_sheet("REM " + str(i))
+		
+		for row in range(len(events_header)):
+			for col in range(len(events_header[row])):
+				ws.write(row, col, events_header[row][col])
+		
+		for row in range(1, 1+len(events_data)):
+			for row in range(len(events_data[row])):
+				ws.write(row, col, events_data[row][col])
+		
+		for row in range(len(rem_stats)):
+			for col in range(4, 4+len(rem_stats[row]):
+				ws.write(row, col, rem_stats[row][col])
+		
+		for row in range(len(rem_duration)):
+			for col in range(7, 7+len(rem_durtaion[row])):
+				ws.write(row, col, rem_duration[row][col])
+		
+		for row in range(len(event_stats)):
+			for col in range(10, 10+len(event_stats[row])):
+				ws.write(row, col, event_stats[row][col])
+				
+		for row in range(3, 3+len(method_stats)):
+			for col in range(6, 6+len(method_stats[row])):
+				ws.write(row, col, method_stats[row][col])
+				
+		for row in range(4, 4+len(parameter_stats)):
+			for col in range(6, 6+len(parameter_stats[row])):
+				ws.write(row, col, parameter_stats[row][col])
+				
+		for row in range(7, 7+len(checks_header)):
+			for col in range(6, 6+len(checks_header[row])):
+				ws.write(row, col, checks_header[row][col])
+				
+		for row ini range(7, 7+len(check_stats)):
+			for col in range(6, 6+len(check_stats[row])):
+				ws.write(row, col, check_stats[row][col])
+				
+		wb.save(location)
+		print("Exported!")
 	
 	def run(self):
 		print("WELCOME MESSAGE")
@@ -182,10 +272,20 @@ class Analyzer:
 		
 		for file in file_paths:
 			data = self.loadFile(file)
+			location = self.selectExportLocation() + '/' + data.name + '.xlsx'
 			rem_idx = self.parseREM(data)
 			for rem in rem_idx:
 				method, threshold_rem, checks = self.determineThreshold(data, rem)
 				peaks, below = self.filter(data, rem, threshold_rem)
 				analysis = self.analyze(peaks, rem, data.resolution)
 				below_avg = np.mean(below[:,1])
-				
+				try:
+					self.export(location, rem_idx.index(rem), analysis, method, threshold_rem, checks, below_avg)
+				except TypeError as err:
+					print("TypeError:", err)
+				except ValueError as err:
+					prinit("ValueError:', err)
+				except RuntimeError as err:
+					print("RuntimeError:", err)
+			print("Completed analyzing file at", file)
+		print("Completed all requested analyses")
