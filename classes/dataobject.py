@@ -14,6 +14,7 @@ class ChannelNotImplementedError(Exception):
 		
 class DataObject(ABC):
 	standard = "unspecified files"
+	filetypes = []
 
 	@classmethod
 	def __init__(self, filepath, name=""):

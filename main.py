@@ -10,10 +10,9 @@ from parameters import *
 from classes.dataobject import *
 
 class Analyzer:
-	def __init__(self, dataobject, filetypes):
+	def __init__(self, dataobject):
 		self.module = import_module("classes." + dataobject)
 		self.dataobject = getattr(module, dataobject)
-		self.filetypes = filetypes
 		self.root = tk.Tk()
 		self.root.withdraw()
 		
@@ -35,7 +34,7 @@ class Analyzer:
 			print("Select files to analyze")
 			print("This analyzer is configured according to the specifications of", self.dataobject.__name__)
 			print("This specification accepts", self.dataobject.standard)
-			file_paths = self.root.tk.splitlist(filedialog.askopenfilenames(title="Choose Files", filetypes=self.filetypes))
+			file_paths = self.root.tk.splitlist(filedialog.askopenfilenames(title="Choose Files", filetypes=self.dataobject.filetypes))
 			if len(file_paths) == 0:
 				self.defaultQuitPrompt()
 				print("Try again!")
