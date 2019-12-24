@@ -30,27 +30,35 @@ SAMPLE_PERCENTILE = 0.5
 #Minimim time (in ms) between spikes to be registered as separate twitches: Must be a non-negative integer
 MIN_INTERVAL_TIME = 20
 
+
 #Validation Function
-#DO NOT edit the function
+#DO NOT edit
+
+class ParameterError(Exception):
+	def __init__(self, parameter, message):
+		self.parameter = parameter
+		self.message = message
+		
+
 def validateParameters():
-	if !isinstance(BASELINE_PERCENTILE, float) or BASELINE_PERCENTILE < 0 or BASELINE_PERCENTILE > 100:
-		return False
-	if !isinstance(FIRST_TIME, int) or FIRST_TIME <= 0:
-		return False
-	if !isinstance(REM_MEAN, float) or REM_MEAN < 0:
-		return False
-	if !isinstance(SAMPLE_MEAN, float) or SAMPLE_MEAN < 0:
-		return False
-	if !isinstance(REM_STD, float) or REM_STD < 0:
-		return False
-	if !isinstance(SAMPLE_STD, float) or SAMPLE_STD < 0:
-		return False
-	if !isinstance(TWITCH_THRESHOLD, float) or TWITCH_THRESHOLD < 0:	
-		return False
-	if !isinstance(SAMPLE_THRESHOLD, float) or SAMPLE_THRESHOLD < 0:	
-		return False
-	if !isinstance(SAMPLE_PERCENTILE, float) or SAMPLE_PERCENTILE < 0 or SAMPLE_PERCENTILE > 1:	
-		return False
-	if !isinstance(MIN_INTERVAL_TIME, int) or SAMPLE_PERCENTILE < 0:	
-		return False
+	if  not isinstance(BASELINE_PERCENTILE, float) or BASELINE_PERCENTILE < 0 or BASELINE_PERCENTILE > 100:
+		raise ParameterError("BASELINE_PERCENTILE","Must be between 0 and 100, inclusive")
+	if  not isinstance(FIRST_TIME, int) or FIRST_TIME <= 0:
+		raise ParameterError("FIRST_TIME","Must be a positive, non-zero integer")
+	if  not isinstance(REM_MEAN, float) or REM_MEAN < 0:
+		raise ParameterError("REM_MEAN","Must be a non-negative number")
+	if not isinstance(SAMPLE_MEAN, float) or SAMPLE_MEAN < 0:
+		raise ParameterError("SAMPLE_MEAN","Must be a non-negative number")
+	if not isinstance(REM_STD, float) or REM_STD < 0:
+		raise ParameterError("REM_STD","Must be a non-negative number")
+	if not isinstance(SAMPLE_STD, float) or SAMPLE_STD < 0:
+		raise ParameterError("SAMPLE_STD","Must be a non-negative number")
+	if not isinstance(TWITCH_THRESHOLD, float) or TWITCH_THRESHOLD < 0:	
+		raise ParameterError("TWITCH_THRESHOLD","Must be a non-negative number")
+	if not isinstance(SAMPLE_THRESHOLD, float) or SAMPLE_THRESHOLD < 0:	
+		raise ParameterError("SAMPLE_THRESHOLD","Must be a non-negative number")
+	if not isinstance(SAMPLE_PERCENTILE, float) or SAMPLE_PERCENTILE < 0 or SAMPLE_PERCENTILE > 1:	
+		raise ParameterError("SAMPLE_PERCENTILE","Must be between 0 and 1, inclusive")
+	if not isinstance(MIN_INTERVAL_TIME, int) or SAMPLE_PERCENTILE < 0:	
+		raise ParameterError("MIN_INTERVAL_TIME","Must be a non-negative integer")
 	return True
