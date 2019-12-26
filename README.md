@@ -122,6 +122,6 @@ plugin loader will experience a fatal import error.
 
 
 <sub>
-Peever Lab, 2019
+Peever Lab, 
 Jeffrey Wang
 </sub>
