@@ -1,5 +1,8 @@
 .gitignore
 __pycache__
+src/dist
+src/build
 *.m
 *.mat
 *.xls
+*.xlsx
