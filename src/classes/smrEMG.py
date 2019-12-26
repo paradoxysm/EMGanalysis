@@ -2,8 +2,6 @@ from .dataobject import *
 from scipy.io import loadmat
 import numpy as np
 
-from parameters import *
-
 
 class smrEMG(DataObject):
 	standard = ".mat files exported by Spike2 v7"
@@ -11,6 +9,9 @@ class smrEMG(DataObject):
 
 	def __init__(self, filepath, name=""):
 		super().__init__(filepath, name=name)
+		
+	def __str__(self):
+		return type(self).__name__ + ": " + self.name + " at " + self.filepath
 		
 	def createName(self):
 		self.name = self.filepath.split('/')[-1].split('.mat')[0]
@@ -20,15 +21,16 @@ class smrEMG(DataObject):
 		if c == "" or s == "":
 			raise ChannelNotImplementedError("EMG channel or score channel has not been specified")
 		try:
-			matfile = loadmat(filepath)
+			matfile = loadmat(self.filepath)
 		except:
-			raise FileNotFoundError("No such file or directory: " + filepath)
+			raise FileNotFoundError("No such file or directory: " + self.filepath)
 		for field in matfile.keys():
 			if '_Ch' in field:
 				if c == matfile[field][0][0][0][0]:
-					self.data = self.zip((matfile[field][0][0][8]).flatten())
-					self.resolution = matfile[field][0][0][2]
-					self.length = matfile[field][0][0][7]
+					self.data = np.absolute((matfile[field][0][0][8]).flatten())
+					self.indices = np.arange(self.data.size)
+					self.resolution = matfile[field][0][0][2][0][0]
+					self.length = matfile[field][0][0][7][0][0]
 				elif s == matfile[field][0][0][0][0]:
 					self.scores = matfile[field][0][0][7]
 					self.times = matfile[field][0][0][5]
@@ -41,5 +43,4 @@ class smrEMG(DataObject):
 				raise ChannelError(c, channels, "EMG channel not found")
 			else:
 				raise ChannelError(s, channels, "Score channel not found")
-		self.data = np.absolute(self.data)
 		

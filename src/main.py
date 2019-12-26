@@ -1,291 +1,42 @@
-import tqdm
-import os
-import re
-from importlib import import_module
-import tkinter as tk
-from tkinter import filedialog
-from math import floor
-from xlwt import Workbook
-from xlrd import open_workbook
-from xlutils.copy import copy
+import analyzer
+import welcome
 
-from parameters import *
-from classes.dataobject import *
-
-class Analyzer:
-	def __init__(self, dataobject):
-		self.module = import_module("classes." + dataobject)
-		self.dataobject = getattr(module, dataobject)
-		self.root = tk.Tk()
-		self.root.withdraw()
-		
-	def __str__(self):
-		return type(self).__name__ + ": " + self.dataobject.__name__
-
-	def defaultQuitPrompt(self):
-		user = ""
-		while user == 'n': 
-			user = input("Selected nothing, do you wish to quit? [y/n] ")
-			if user == 'y':
-				exit()
-			elif user != 'n':
-				print("Please either enter 'y' or 'n'")
-
-	def selectFiles(self):
-		file_paths = []
-		while len(file_paths) == 0:
-			print("Select files to analyze")
-			print("This analyzer is configured according to the specifications of", self.dataobject.__name__)
-			print("This specification accepts", self.dataobject.standard)
-			file_paths = self.root.tk.splitlist(filedialog.askopenfilenames(title="Choose Files", filetypes=self.dataobject.filetypes))
-			if len(file_paths) == 0:
-				self.defaultQuitPrompt()
-				print("Try again!")
-		return file_paths
-
-	def loadFile(filepath):
-		loading = True
-		print("Loading contents of the file at", filepath)
-		data = self.dataobject(filepath)
-		print("Dataset is named:", data.createName())
-		while loading:
-			channel = input("Enter the name of the EMG channel to be analyzed [Default: 'MASS'] ")
-			score = input("Enter the name of the Score channel [Default: 'SCORE'] ")
-			try:
-				data.read(c=channel, s=score)
-				loading = False
-			except ChannelNotImplementedError as err:
-				print("ChannelNotImplementedError:", err.message)
-			except ChannelError as err:
-				print("ChannelError:",err.message," - Input:", err.c, " - Found:", err.channels)
-			except FileNotFoundError as err:
-				print("FileNotFoundError:", err)
-			except NotImplementedError as err:
-				print("NotImplementedError:", err)
-			except:
-				print("Something unexpected went wrong! Let's try again")
-			if loading:
-				self.defaultQuitPrompt()
-				print("Try again!")
-		return data
-	
-	def parseREM(self, data):
-		print("Parsing through dataset")
-		print("Found", data.length, "samples and", data.scoreLength, "epochs")
-		rem_start = 0
-		rem_end = 0
-		rem_idx = np.zeros((0,2))
-		for i in tqdm(range(data.scoreLength+1)):
-			if data.scores[i] == 'R' and i < data.scoreLength:
-				if rem_end - rem_start <= 0:
-					rem_start = i
-					rem_end = i
-				rem_end += 1
-			else:
-				if rem_end - rem_start > 0:
-					rem_start_time = floor(data.times[rem_start] / data.resolution)+1
-					rem_end_time = floor(data.times[rem_end] / data.resolution)
-					rem_idx = np.concatenate((rem_idx, (rem_start_time, rem_end_time), axis=0)
-		num_rem = rem_idx.shape[0]
-		print("Found", num_rem, "REM episodes")
-		return rem_idx	
-
-	def determineThreshold(self, data, rem):
-		print("Determining threshold for REM episode found at", rem)
-		method = ''
-		FIRST_SAMPLES = FIRST_TIME / (data.resolution * 1000)
-		rem_data = data.get(rem[0], k=rem[1])[:,1]
-		
-		start = 0
-		threshold_rem = 0
-		checks = {'thresholds':[], 'rem_means':[], 'rem_stds':[],
-					'twitch_checks':[], 'twitch_ratios':[],
-					'sample_means':np.mean(rem_data), 'sample_stds':np.std(rem_data),
-					'sample_checks':SAMPLE_MEAN*sample_mean + SAMPLE_STD*sample_std,
-					'sample_ratios':[]
-				}
-		
-		while method == '':
-			rem_end = round(start + FIRST_SAMPLES)
-			rem_sample = rem_data[start:rem_end]
-			threshold_rem = np.percentile(rem_sample, BASELINE_PERCENTILE)
-			rem_mean = np.mean(rem_sample)
-			rem_std = np.std(rem_sample)
-			twitch_check = REM_MEAN*rem_mean + REM_STD*rem_std
-			
-			checks['thresholds'].append(threshold_rem)
-			checks['rem_means'].append(rem_mean)
-			checks['rem_stds'].append(rem_std)
-			checks['twitch_checks'].append(twitch_check)
-			checks['twitch_ratios'].append(twitch_check/threshold_rem)
-			checks['sample_ratios'].append(sample_check/threshold_rem)
-				
-			if twitch_check / threshold_rem > TWITCH_THRESHOLD and sample_check / threshold_rem > SAMPLE_THRESHOLD:
-				method = 'Window';
-			else:		
-				start = round(start + 0.5*FIRST_SAMPLES);
-				if start + FIRST_SAMPLES > rem_data.shape[0]:
-					threshold_rem = np.percentile(thresholds,SAMPLE_PERCENTILE);
-					method = 'Percentile';
-		print("Threshold for REM episode at", rem, "is set to", threshold_rem, "using the", method, "method")
-		return method, threshold_rem, checks
-		
-	def filter(self, data, rem, threshold):
-		print("Filtering REM episode at", rem, "with a threshold of", threshold)
-		rem_data = data.get(rem[0], k=rem[1])
-		filtered = np.zeros((0,2))
-		unfiltered = np.zeros((0,2))
-		for i in tqdm(range(rem_data.shape[0])):
-			if rem_data[i,1] > threshold:
-				filtered = np.concatenate((filtered,rem_data[i]),axis=0)
-			else:
-				unfiltered = np.concatenate((unfiltered,rem_data[i]),axis=0)
-		print("Filtered!")
-		return filtered, unfiltered
-		
-	def analyze(self, peaks, rem, resolution):
-		print("Analyzing for twitches")
-		length = peaks.shape[0]
-		analysis = {'events':[],'num_events':0,'avg_amp':[],'int_amp':[],
-					'durations':[], 'time':length * resolution,
-					'start':rem[0] * resolution, 'end':rem[1] * resolution,
-					'event%':length/(rem[1]-rem[0]+1),'base%':1-length/(rem[1]-rem[0]+1)
-					}
-		if length > 0:
-			MIN_INTERVAL = MIN_INTERVAL_TIME / (resolution * 1000)
-			event = np.array([peaks[0]])
-			for i in tqdm(range(1, length+1)):
-				if peaks[i,0] - event[-1][0] < MIN_INTERVAL and i < length:
-					event = np.concatenate((event, np.array([peaks[i]])), axis=0)
-				else:
-					analysis['event_starts'].append(event[0,0] * resolution)
-					analysis['num_events'] += 1
-					analysis['avg_amp'].append(np.mean(event[:,1]))
-					analysis['int_amp'].append(np.sum(event[:,1]))
-					analysis['durations'].append(event.shape[0] * resolution)
-					if i < length:
-						event = np.array([peaks[i]])
-		print("Twitches analyzed!")
-		print("Found", analysis['num_events'], "twitches")
-		return analysis		
-	
-	def selectExportLocation(self):
-		location = None
-		while location is None:
-			print("Select export location")
-			location = filedialog.askdirectory(title="Choose Folder")
-			if location is None or not os.path.isdir(location):
-				location = None
-				self.defaultQuitPrompt()
-				print("Try again!")
-		print("Analysis will be exported to", location)
-		return location
-	
-	def export(self, location="", i=-1, analysis={}, method="", threshold_rem=-1, checks={}, below_avg=-1):
-		if location == "" or i == -1 or len(analysis) == 0 or method == "" or threshold_rem == -1 or len(checks) == 0 or below_avg == -1:
-			raise TypeError("Not enough arguments to properly export data")
-		print("Formatting REM episode for export to", location)
-		events_header = np.array([['Event Start (s)','Avg Amplitude','Summation','Duration (s)']])
-		events_data = np.stack((analysis['event_starts'], analysis['avg_amp'], analysis['int_amp'], analysis['durations']), axis=1)
-		rem_stats = np.array([['Threshold','Number of Events','Avg Amplitude below Threshold'],
-							[threshold_rem, analysis['num_events'], below_avg]])
-		time = analysis['end'] - analysis['start']
-		rem_duration = np.array([['Start Time (s)', analysis['start']],
-								['End Time (s)', analysis['end']],
-								['Total Duration (s)', time]])
-		event_stats = np.array([['Event Percent', 'Event Time (s)'], [analysis['event%'], analysis['event%']*time],
-								['Baseline Percent', 'Baseline Time (s)'], [analysis['base%'], analysis['base%']*time]])
-		parameter_stats = np.array([['Threshold Percentile', 'Threshold Interval', 'Twich Mean Multiplier', 
-								'Twitch SD Multiplier', 'Sample Mean Multiplier', 'Sample SD Multiplier',
-								'Twitch Ratio', 'Sample Ratio', 'Sample Percentile', 'Minimum Interval Time'],
-								[BASELINE_PERCENTILE, FIRST_TIME, REM_MEAN, REM_STD, SAMPLE_MEAN, SAMPLE_STD, 
-								TWITCH_THRESHOLD, SAMPLE_THRESHOLD, SAMPLE_PERCENTILE, MIN_INTERVAL_TIME]])
-		if method == "Window" or method == "Percentile":
-			method_stats = np.array([['Method', method]])
-			checks_header = np.array(['Window Threshold', 'Window Mean', 'Window STD','Window Check',
-										'Phase Mean', 'Phase STD', 'Phase Check', 'Window Ratio','Phase Ratio']
-			checks_stats = np.stack((checks['thresholds'], checks['rem_means'], checks['rem_stds'],
-										checks['twitch_checks'], checks['sample_means'], checks['sample_stds'],
-										checks['sample_checks'], checks['twitch_ratios'], check['sample_ratios']), axis=1)
-		else:
-			raise RuntimeError("Something went wrong with the method type!")
-		
-		
-		print("Exporting to", location)
-		if not os.path.isfile(location):
-			wb = Workbook()
-			wb.save(exportpath)
-		rb = open_workbook(location)
-		wb = copy(rb)
-		ws = wb.add_sheet("REM " + str(i))
-		
-		for row in range(len(events_header)):
-			for col in range(len(events_header[row])):
-				ws.write(row, col, events_header[row][col])
-		
-		for row in range(1, 1+len(events_data)):
-			for row in range(len(events_data[row])):
-				ws.write(row, col, events_data[row][col])
-		
-		for row in range(len(rem_stats)):
-			for col in range(4, 4+len(rem_stats[row]):
-				ws.write(row, col, rem_stats[row][col])
-		
-		for row in range(len(rem_duration)):
-			for col in range(7, 7+len(rem_durtaion[row])):
-				ws.write(row, col, rem_duration[row][col])
-		
-		for row in range(len(event_stats)):
-			for col in range(10, 10+len(event_stats[row])):
-				ws.write(row, col, event_stats[row][col])
-				
-		for row in range(3, 3+len(method_stats)):
-			for col in range(6, 6+len(method_stats[row])):
-				ws.write(row, col, method_stats[row][col])
-				
-		for row in range(4, 4+len(parameter_stats)):
-			for col in range(6, 6+len(parameter_stats[row])):
-				ws.write(row, col, parameter_stats[row][col])
-				
-		for row in range(7, 7+len(checks_header)):
-			for col in range(6, 6+len(checks_header[row])):
-				ws.write(row, col, checks_header[row][col])
-				
-		for row ini range(7, 7+len(check_stats)):
-			for col in range(6, 6+len(check_stats[row])):
-				ws.write(row, col, check_stats[row][col])
-				
-		wb.save(location)
-		print("Exported!")
-	
-	def run(self):
-		print("WELCOME MESSAGE")
-		print("Loading and validating parameters")
+if __name__ == "__main__":
+	welcome.printWelcome()
+	before_import = dir() + ['before_import']
+	from classes import *
+	after_import = dir()
+	modules = list(set(after_import) - set(before_import) - {'dataobject'})
+	import_type = ""
+	analyzerObject = None
+	while analyzerObject is None:
+		print("Recognized Data Import Types:")
+		for i in range(len(modules)):
+			print(" " + str(i+1) + ".", modules[i])
 		try:
-			validateParameters()
-		except ParameterError as err:
-			print("ParameterError:", err.parameter, ",", err.message)
+			import_type = input("Select a data import type by entering corresponding number; quit by entering 'q': ")
+		except ValueError as err:
+			print("ValueError:", err)
+			import_type = ""
+		if import_type == 'q':
+			print("Goodbye!")
 			exit()
-		print("Successfully loaded parameters")
-
-		file_paths = selectFiles()
-		
-		for file in file_paths:
-			data = self.loadFile(file)
-			location = self.selectExportLocation() + '/' + data.name + '.xlsx'
-			rem_idx = self.parseREM(data)
-			for rem in rem_idx:
-				method, threshold_rem, checks = self.determineThreshold(data, rem)
-				peaks, below = self.filter(data, rem, threshold_rem)
-				analysis = self.analyze(peaks, rem, data.resolution)
-				below_avg = np.mean(below[:,1])
-				try:
-					self.export(location, rem_idx.index(rem), analysis, method, threshold_rem, checks, below_avg)
-				except TypeError as err:
-					print("TypeError:", err)
-				except ValueError as err:
-					prinit("ValueError:', err)
-				except RuntimeError as err:
-					print("RuntimeError:", err)
-			print("Completed analyzing file at", file)
-		print("Completed all requested analyses")
+		else:
+			try:
+				import_type = int(import_type)
+			except ValueError as err:
+				print("Seems like you picked something wrong try again!")
+				import_type = ""
+			else:
+				if import_type <= len(modules) and import_type > 0:
+					import_type = modules[import_type-1]
+					try:
+						analyzerObject = analyzer.Analyzer(import_type)
+					except ImportError as err:
+						print("ImportError:", err)
+						analyzerObject = None
+						import_type = ""
+				else:
+					print("Seems like you picked something wrong try again!")
+					import_type = ""
+	analyzerObject.run()
