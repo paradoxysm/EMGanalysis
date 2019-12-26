@@ -4,7 +4,7 @@ dataObject = SourceFileLoader("dataobject", "./plugins/dataobject.py").load_modu
 import numpy as np
 from scipy.io import loadmat
 
-
+# A Data Import Type (DataObject) for .mat files exported by Spike2 v7
 class smrEMG(dataObject.DataObject):
 	standard = ".mat files exported by Spike2 v7"
 	filetypes = [("MAT-files", "*.mat")]
@@ -15,10 +15,12 @@ class smrEMG(dataObject.DataObject):
 	def __str__(self):
 		return type(self).__name__ + ": " + self.name + " at " + self.filepath
 		
+	# Set up a default name based on the file name
 	def createName(self):
 		self.name = self.filepath.split('/')[-1].split('.mat')[0]
 		return self.name
 		
+	# Read data out of the associated file
 	def read(self, c="", s=""):
 		if c == "" or s == "":
 			raise dataObject.ChannelNotImplementedError("EMG channel or score channel has not been specified")

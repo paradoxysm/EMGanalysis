@@ -1,3 +1,5 @@
+
+# Welcome Message used at the launch of the application
 def printWelcome():
 	print("Welcome to EMG Analysis!")
 	print("-"*30)

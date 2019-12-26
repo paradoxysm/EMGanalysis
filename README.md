@@ -9,6 +9,7 @@ Application for mouse EMG analysis and REM sleep muscle characterization
 4. Methodology
 5. Output File
 6. Editing Parameters
+7. Editing or Adding Plugins (Data Import Types)
 
 # 1. Description
 
@@ -16,6 +17,7 @@ This program takes in a dataset file of sleep recordings and analyzes EMG data o
 characterizing all twitches that occur in REM sleep.
 
 The information is outputted into an .xlsx spreadsheet for subsequent analysis.
+A Baseline vs Experiment analysis is included as a .xlsm file
 
 # 2. Installation
 
@@ -26,7 +28,11 @@ The information is outputted into an .xlsx spreadsheet for subsequent analysis.
 
 Default Parameters are stored in the config file called "parameters.py". They may be edited to suit your needs. **DO NOT** move the file, change the file name or change the parameter names!
 
-When you start up the application, it will open a command line interface. Just follow the instructions and enjoy!
+When you start up the application, it will open a command line interface. 
+You will be asked to select a Data Import Type at the beginning of the program. 
+A Data Import Type sets out the standards for reading data files. The underlying data structure is set forth 
+by the standards found in the Standards folder. 
+Just follow the instructions and enjoy!
 It will prompt you to select the files to be analyzed. You may select one or multiple files in the same folder. Please refer to the file requirements specified by the data import type module you are choosing to use. These file standards may be found in the File Standards folder.
 
 Once the file is successfully read in, the application will move to calculating all sleep phases and
@@ -100,6 +106,19 @@ It is formatted as the following:
 The Parameters that can be customized are located in "parameters.config" which MUST be located in the same folder as this application's executable and CANNOT be renamed to anything other than "parameters.config". You can open and edit the config file in any word processing file (notepad is simplest) This is the only location in which these parameters may be edited. Once the application is launched, for as long as the application is running continuously, it will use the parameters as they were when the application was started. If the parameters are subsequently changed, they do not take effect until you restart the application.
 
 It is IMPORTANT that the parameter names are not changed!
+
+# 7. Adding or Editing Plugins (Data Import Types)
+
+Data Import Types are accepted file types and associated file reading methods for analysis. They can be found in
+the plugins folder. It is IMPORTANT that this folder is not moved!
+
+Plugins are dynamically loaded at the time of application launch. They follow the structure 
+set out by the DataObject abstract base class. The DataObject abstract class is NOT a properly 
+usable Data Import Type; rather, it is the superclass that defines how all Data Import Types should 
+behave. This allows the application to be independent of Data Import Types.
+
+Data Import Types must be named the same in the file name as well as the class name, otherwise the 
+plugin loader will experience a fatal import error.
 
 
 <sub>

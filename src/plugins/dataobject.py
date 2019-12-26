@@ -11,7 +11,9 @@ class ChannelNotImplementedError(Exception):
 	def __init__(self, message):
 		self.message = message
 
-		
+
+# DataObject defines the Class structure and necessary components
+#	to a Data Import Type plugin
 class DataObject(ABC):
 	standard = "unspecified files"
 	filetypes = []
@@ -47,20 +49,20 @@ class DataObject(ABC):
 			return arr[i:k]
 		else:
 			return arr[i]
-			
+
+	@classmethod
 	def getData(self, i, k=None):
 		return self.get(self.data, i, k)
-		
+
+	@classmethod
 	def getIndices(self, i, k=None):
 		return self.get(self.indices, i, k)
 	
+	@classmethod
 	def getScores(self, i, k=None):
 		return self.get(self.scores, i, k)
-		
+	
+	@classmethod
 	def getTimes(self, i, k=None):
 		return self.get(self.times, i, k)
-		
-	def zip(self, arr):
-		indices = np.arange(arr.size)
-		return np.stack((indices,arr), axis=1)
 	
