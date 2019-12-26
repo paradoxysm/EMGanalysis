@@ -15,7 +15,7 @@ Application for mouse EMG analysis and REM sleep muscle characterization
 This program takes in a dataset file of sleep recordings and analyzes EMG data of each REM phase,
 characterizing all twitches that occur in REM sleep.
 
-The information is outputted into an xlsx spreadsheet for subsequent analysis.
+The information is outputted into an .xls spreadsheet for subsequent analysis.
 
 # 2. Installation
 
@@ -30,7 +30,7 @@ When you start up the application, it will open a command line interface. Just f
 It will prompt you to select the files to be analyzed. You may select one or multiple files in the same folder. Please refer to the file requirements specified by the data import type module you are choosing to use. These file standards may be found in the File Standards folder.
 
 Once the file is successfully read in, the application will move to calculating all sleep phases and
-characterizing twitches. Once the application displays that it has completed the file(s), you may open the xlsx spreadsheets. Opening before the application is finished calculations will prevent it from continuing to write to the sheets and cause a fatal error. Once all files are completely analyzed, the application will close.
+characterizing twitches. Once the application displays that it has completed the file(s), you may open the .xls spreadsheets. Opening before the application is finished calculations will prevent it from continuing to write to the sheets and cause a fatal error. Once all files are completely analyzed, the application will close.
 
 # 4. Methodology
 
