@@ -1,22 +1,23 @@
 from tqdm import tqdm
-import os
+import sys, os
 import tkinter as tk
 from tkinter import filedialog
 from math import floor
 from xlwt import Workbook
 from xlrd import open_workbook
 from xlutils.copy import copy
+import win32com.client as win32
+import pathlib
 
-import sys
-from importlib.machinery import SourceFileLoader
-parameters = SourceFileLoader( 'parameters', './parameters.py' ).load_module()
+from importlib import import_module
+sys.path.append(os.path.dirname(sys.executable))
 
-from classes import *
-from classes.dataobject import *
+from plugins.dataobject import *
 
 class Analyzer:
 	def __init__(self, dataobject):
-		self.dataobject = getattr(globals()[dataobject], dataobject)
+		self.dataobject = dataobject
+		self.parameters = import_module('parameters')
 		self.root = tk.Tk()
 		self.root.withdraw()
 		
@@ -29,7 +30,7 @@ class Analyzer:
 			user = input("Selected nothing, do you wish to quit? [y/n] ")
 			if user == 'y':
 				print("Goodbye!")
-				exit()
+				sys.exit()
 			elif user != 'n':
 				print("Please either enter 'y' or 'n'")
 
@@ -82,7 +83,7 @@ class Analyzer:
 		rem_end = 0
 		rem_idx = []
 		for i in tqdm(range(data.scoreLength+1)):
-			if i < data.scoreLength and data.getScores(i) == parameters.REM:
+			if i < data.scoreLength and data.getScores(i) == self.parameters.REM:
 				if rem_end - rem_start <= 0:
 					rem_start = i
 					rem_end = i
@@ -101,14 +102,14 @@ class Analyzer:
 	def determineThreshold(self, data, i, rem):
 		print("Determining threshold for REM episode", i, "found at", rem)
 		method = ''
-		FIRST_SAMPLES = parameters.FIRST_TIME / (data.resolution * 1000)
+		FIRST_SAMPLES = self.parameters.FIRST_TIME / (data.resolution * 1000)
 		rem_data = data.getData(int(rem[0]), k=int(rem[1]))
 		
 		start = 0
 		threshold_rem = 0
 		sample_mean = np.mean(rem_data)
 		sample_std = np.std(rem_data)
-		sample_check = parameters.SAMPLE_MEAN*sample_mean + parameters.SAMPLE_STD*sample_std
+		sample_check = self.parameters.SAMPLE_MEAN*sample_mean + self.parameters.SAMPLE_STD*sample_std
 		checks = {'thresholds':[], 'rem_means':[], 'rem_stds':[],
 					'twitch_checks':[], 'twitch_ratios':[],
 					'sample_means':np.mean(rem_data), 'sample_stds':np.std(rem_data),
@@ -119,10 +120,10 @@ class Analyzer:
 		while method == '':
 			rem_end = int(round(start + FIRST_SAMPLES))
 			rem_sample = rem_data[start:rem_end]
-			threshold_rem = np.percentile(rem_sample, parameters.BASELINE_PERCENTILE)
+			threshold_rem = np.percentile(rem_sample, self.parameters.BASELINE_PERCENTILE)
 			rem_mean = np.mean(rem_sample)
 			rem_std = np.std(rem_sample)
-			twitch_check = parameters.REM_MEAN*rem_mean + parameters.REM_STD*rem_std
+			twitch_check = self.parameters.REM_MEAN*rem_mean + self.parameters.REM_STD*rem_std
 			
 			checks['thresholds'].append(threshold_rem)
 			checks['rem_means'].append(rem_mean)
@@ -131,12 +132,12 @@ class Analyzer:
 			checks['twitch_ratios'].append(twitch_check/threshold_rem)
 			checks['sample_ratios'].append(sample_check/threshold_rem)
 				
-			if twitch_check / threshold_rem > parameters.TWITCH_THRESHOLD and sample_check / threshold_rem > parameters.SAMPLE_THRESHOLD:
+			if twitch_check / threshold_rem > self.parameters.TWITCH_THRESHOLD and sample_check / threshold_rem > self.parameters.SAMPLE_THRESHOLD:
 				method = 'Window';
 			else:		
 				start = int(round(start + 0.5*FIRST_SAMPLES))
 				if start + FIRST_SAMPLES > len(rem_data):
-					threshold_rem = np.percentile(thresholds,parameters.SAMPLE_PERCENTILE)
+					threshold_rem = np.percentile(thresholds,self.parameters.SAMPLE_PERCENTILE)
 					method = 'Percentile'
 		print("Threshold for REM episode at", rem, "is set to", threshold_rem, "using the", method, "method")
 		return method, threshold_rem, checks
@@ -172,7 +173,7 @@ class Analyzer:
 					'event%':length/(rem[1]-rem[0]+1),'base%':1-length/(rem[1]-rem[0]+1)
 					}
 		if length > 0:
-			MIN_INTERVAL = parameters.MIN_INTERVAL_TIME / (resolution * 1000)
+			MIN_INTERVAL = self.parameters.MIN_INTERVAL_TIME / (resolution * 1000)
 			event = [peaks[0]]
 			event_idx = [peaks_idx[0]]
 			for i in tqdm(range(1, length+1)):
@@ -221,10 +222,10 @@ class Analyzer:
 		parameter_stats = np.array([['Threshold Percentile', 'Threshold Interval', 'Twich Mean Multiplier', 
 								'Twitch SD Multiplier', 'Sample Mean Multiplier', 'Sample SD Multiplier',
 								'Twitch Ratio', 'Sample Ratio', 'Sample Percentile', 'Minimum Interval Time'],
-								[parameters.BASELINE_PERCENTILE, parameters.FIRST_TIME, parameters.REM_MEAN, 
-								parameters.REM_STD, parameters.SAMPLE_MEAN, parameters.SAMPLE_STD, 
-								parameters.TWITCH_THRESHOLD, parameters.SAMPLE_THRESHOLD, 
-								parameters.SAMPLE_PERCENTILE, parameters.MIN_INTERVAL_TIME]])
+								[self.parameters.BASELINE_PERCENTILE, self.parameters.FIRST_TIME, self.parameters.REM_MEAN, 
+								self.parameters.REM_STD, self.parameters.SAMPLE_MEAN, self.parameters.SAMPLE_STD, 
+								self.parameters.TWITCH_THRESHOLD, self.parameters.SAMPLE_THRESHOLD, 
+								self.parameters.SAMPLE_PERCENTILE, self.parameters.MIN_INTERVAL_TIME]])
 		if method == "Window" or method == "Percentile":
 			method_stats = np.array([['Method', method]])
 			phase_header = np.array([['Phase Mean', 'Phase STD', 'Phase Check']])
@@ -239,11 +240,12 @@ class Analyzer:
 		sheet_name = "REM " + i.split('/')[0]
 		
 		print("Exporting to", location)
+		
 		if not os.path.isfile(location):
 			wb = Workbook()
 		else:
 			rb = open_workbook(location)
-			if len(rb.sheet_names()) > int(i.split('/')[0]):
+			if len(rb.sheet_names()) >= int(i.split('/')[0]):
 				overwrite = ""
 				while overwrite == "":
 					print("This dataset has previously been analyzed")
@@ -256,7 +258,7 @@ class Analyzer:
 					else:
 						print("Please either enter 'y' or 'n'")
 						overwrite = ""
-				os.delete(location)
+				os.remove(location)
 				wb = Workbook()
 			else:
 				wb = copy(rb)
@@ -309,17 +311,27 @@ class Analyzer:
 				
 		wb.save(location)
 		print("Exported!")
+		return True
+		
+	def xls2xlsx(self, location):
+		excel = win32.gencache.EnsureDispatch('Excel.Application')
+		wb = excel.Workbooks.Open(location)
+		output_file = pathlib.Path('{}x'.format(location))
+		wb.SaveAs(str(output_file), FileFormat = 51)    #FileFormat = 51 is for .xlsx extension
+		wb.Close()                               		#FileFormat = 56 is for .xls extension
+		excel.Application.Quit()
+		os.remove(location)
 	
 	def run(self):
 		print("-"*30)
 		print("Running analysis as", str(self))
-		print("Loading and validating parameters")
+		print("Loading and validating self.parameters")
 		try:
-			parameters.validateParameters()
-		except parameters.ParameterError as err:
+			self.parameters.validateParameters()
+		except self.parameters.ParameterError as err:
 			print("ParameterError:", err.parameter, ",", err.message)
-			exit()
-		print("Successfully loaded parameters")
+			sys.exit()
+		print("Successfully loaded self.parameters")
 		print("-"*30)
 		
 		file_paths = self.selectFiles()
@@ -340,13 +352,15 @@ class Analyzer:
 						break
 				except TypeError as err:
 					print("TypeError:", err)
-					exit()
+					sys.exit()
 				except ValueError as err:
 					print("ValueError:", err)
-					exit()
+					sys.exit()
 				except RuntimeError as err:
 					print("RuntimeError:", err)
-					exit()
+					sys.exit()
 			print("Completed analyzing file at", file)
+			print("Converting .xls file to .xlsx")
+			self.xls2xlsx(location)
 			print("-"*30)
 		print("Completed all requested analyses")

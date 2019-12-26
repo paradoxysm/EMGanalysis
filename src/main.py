@@ -1,18 +1,25 @@
+import sys, os
+from importlib import import_module
+
 import analyzer
 import welcome
 
+
 if __name__ == "__main__":
 	welcome.printWelcome()
-	before_import = dir() + ['before_import']
-	from classes import *
-	after_import = dir()
-	modules = list(set(after_import) - set(before_import) - {'dataobject'})
+	sys.path.append(os.path.dirname(sys.executable))
+	loader = import_module('pluginloader')
+	modules = loader.loadPlugins()
+	if len(modules) == 0:
+		print("No recognized Data Import Types!")
+		print("Goodbye!")
+		sys.exit()
 	import_type = ""
 	analyzerObject = None
 	while analyzerObject is None:
 		print("Recognized Data Import Types:")
 		for i in range(len(modules)):
-			print(" " + str(i+1) + ".", modules[i])
+			print(" " + str(i+1) + ".", modules[i].__name__)
 		try:
 			import_type = input("Select a data import type by entering corresponding number; quit by entering 'q': ")
 		except ValueError as err:
@@ -20,7 +27,7 @@ if __name__ == "__main__":
 			import_type = ""
 		if import_type == 'q':
 			print("Goodbye!")
-			exit()
+			sys.exit()
 		else:
 			try:
 				import_type = int(import_type)

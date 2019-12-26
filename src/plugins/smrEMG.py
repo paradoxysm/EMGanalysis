@@ -1,9 +1,11 @@
-from .dataobject import *
-from scipy.io import loadmat
+from importlib.machinery import SourceFileLoader
+dataObject = SourceFileLoader("dataobject", "./plugins/dataobject.py").load_module()
+
 import numpy as np
+from scipy.io import loadmat
 
 
-class smrEMG(DataObject):
+class smrEMG(dataObject.DataObject):
 	standard = ".mat files exported by Spike2 v7"
 	filetypes = [("MAT-files", "*.mat")]
 
@@ -19,7 +21,7 @@ class smrEMG(DataObject):
 		
 	def read(self, c="", s=""):
 		if c == "" or s == "":
-			raise ChannelNotImplementedError("EMG channel or score channel has not been specified")
+			raise dataObject.ChannelNotImplementedError("EMG channel or score channel has not been specified")
 		try:
 			matfile = loadmat(self.filepath)
 		except:
@@ -40,7 +42,7 @@ class smrEMG(DataObject):
 			for field in matfile.keys():
 				channels.append(matfile[field][0][0][0][0])
 			if self.data.size == 0:
-				raise ChannelError(c, channels, "EMG channel not found")
+				raise dataObject.ChannelError(c, channels, "EMG channel not found")
 			else:
-				raise ChannelError(s, channels, "Score channel not found")
+				raise dataObject.ChannelError(s, channels, "Score channel not found")
 		
