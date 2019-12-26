@@ -1,5 +1,5 @@
 .gitignore
-data5.mat
 __pycache__
 *.m
+*.mat
 *.xls
