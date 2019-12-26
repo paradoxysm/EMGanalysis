@@ -15,7 +15,7 @@ Application for mouse EMG analysis and REM sleep muscle characterization
 This program takes in a dataset file of sleep recordings and analyzes EMG data of each REM phase,
 characterizing all twitches that occur in REM sleep.
 
-The information is outputted into an xlsx spreadsheet for subsequent analysis.
+The information is outputted into an .xlsx spreadsheet for subsequent analysis.
 
 # 2. Installation
 
@@ -30,7 +30,7 @@ When you start up the application, it will open a command line interface. Just f
 It will prompt you to select the files to be analyzed. You may select one or multiple files in the same folder. Please refer to the file requirements specified by the data import type module you are choosing to use. These file standards may be found in the File Standards folder.
 
 Once the file is successfully read in, the application will move to calculating all sleep phases and
-characterizing twitches. Once the application displays that it has completed the file(s), you may open the xlsx spreadsheets. Opening before the application is finished calculations will prevent it from continuing to write to the sheets and cause a fatal error. Once all files are completely analyzed, the application will close.
+characterizing twitches. Once the application displays that it has completed the file(s), you may open the .xls spreadsheets. Opening before the application is finished calculations will prevent it from continuing to write to the sheets and cause a fatal error. Once all files are completely analyzed, the application will close.
 
 # 4. Methodology
 
@@ -45,11 +45,11 @@ For each file, the application does the following:
 * Examines these "spikes" and groups them into "twitches"
 * As it does so, it characterizes these twitches with duration, average amplitude and total activity (measured by the summation of EMG activity over the course of the twitch).
 * Creates a summarization of data for the whole REM phase
-* Exports data into a sheet in an xlsx document that follows <EMG file name>-output.xlsx and is located in the same folder as the EMG file
+* Exports data into a sheet in an xlsx document that follows <EMG file name>-analysis.xlsx and is located in the same folder as the EMG file
 
 ### (a) REM Isolation Method
 
-To identify and isolate REM phases in the dataset, the application runs through the Sleep Epochs information channel (to simplify the amount of data it must iterate over).	The application identifies groups of Epochs labeled 'R' and determines their corresponding start and end times. This allows the application to align the Epochs as accurately as possible to the correct set of EMG data points. Each REM Phase's corresponding EMG data points are stored in their own arrays.
+To identify and isolate REM phases in the dataset, the application runs through the Sleep Epochs information channel (to simplify the amount of data it must iterate over). The application identifies groups of Epochs labeled 'R' and determines their corresponding start and end times. This allows the application to align the Epochs as accurately as possible to the correct set of EMG data points. Each REM Phase's corresponding EMG data points are stored in their own arrays.
 
 ### (b) Threshold Determination Method
 
