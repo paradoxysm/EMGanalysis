@@ -4,3 +4,4 @@ tqdm
 xlwt
 xlrd
 xlutils
+win32com
