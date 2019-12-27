@@ -74,20 +74,14 @@ class Analyzer:
 			try:
 				data.read(c=channel, s=score)
 				loading = False
-			# channel or score were not set for some reason
-			except ChannelNotImplementedError as err:
-				print("ChannelNotImplementedError:", err.message)
-			# Channels could not be found by the inputted names
-			except ChannelError as err:
-				print("ChannelError:",err.message," - Input:", err.c, " - Found:", err.channels)
-			# Could not find the Data file
+			# An error occurred in finding the file or extracting data from the file
 			except FileNotFoundError as err:
 				print("FileNotFoundError:", err)
 			# Running a DataObject that does not have its read function implemented
 			except NotImplementedError as err:
 				print("NotImplementedError:", err)
 			# Some other unexpected error
-			except:
+			except Exception:
 				print("Something unexpected went wrong! Let's try again")
 			if loading:
 				self.defaultQuitPrompt()
@@ -415,7 +409,7 @@ class Analyzer:
 				except ValueError as err:
 					print("ValueError:", err)
 					sys.exit()
-				except RuntimeError as err:
+				except Exception as err:
 					print("RuntimeError:", err)
 					sys.exit()
 			print("Completed analyzing file at", file)

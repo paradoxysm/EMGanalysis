@@ -1,17 +1,6 @@
 import numpy as np
 from abc import ABC, abstractmethod
 
-class ChannelError(Exception):
-	def __init__(self, c, channels, message):
-		self.c = c
-		self.channels = channels
-		self.message = message
-		
-class ChannelNotImplementedError(Exception):
-	def __init__(self, message):
-		self.message = message
-
-
 # DataObject defines the Class structure and necessary components
 #	to a Data Import Type plugin
 class DataObject(ABC):

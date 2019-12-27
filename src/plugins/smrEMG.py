@@ -23,28 +23,36 @@ class smrEMG(dataObject.DataObject):
 	# Read data out of the associated file
 	def read(self, c="", s=""):
 		if c == "" or s == "":
-			raise dataObject.ChannelNotImplementedError("EMG channel or score channel has not been specified")
+			raise FileNotFoundError("EMG channel or score channel has not been specified")
 		try:
 			matfile = loadmat(self.filepath)
 		except:
 			raise FileNotFoundError("No such file or directory: " + self.filepath)
+		channels = []
 		for field in matfile.keys():
 			if '_Ch' in field:
-				if c == matfile[field][0][0][0][0]:
-					self.data = np.absolute((matfile[field][0][0][8]).flatten())
-					self.indices = np.arange(self.data.size)
-					self.resolution = matfile[field][0][0][2][0][0]
-					self.length = matfile[field][0][0][7][0][0]
-				elif s == matfile[field][0][0][0][0]:
-					self.scores = matfile[field][0][0][7]
-					self.times = matfile[field][0][0][5]
-					self.scoreLength = len(self.scores)
-		if self.data.size == 0 or self.scores.size == 0 or self.times.size == 0:
-			channels = []
-			for field in matfile.keys():
 				channels.append(matfile[field][0][0][0][0])
+		
+			for field in matfile.keys():
+				if '_Ch' in field:
+					if c == matfile[field][0][0][0][0]:
+						try:
+							self.data = np.absolute((matfile[field][0][0][8]).flatten())
+							self.indices = np.arange(self.data.size)
+							self.resolution = matfile[field][0][0][2][0][0]
+							self.length = matfile[field][0][0][7][0][0]
+						except Exception:
+							raise FileNotFoundError("An error occurred extracting from channel " + c)
+					elif s == matfile[field][0][0][0][0]:
+						try:
+							self.scores = matfile[field][0][0][7]
+							self.times = matfile[field][0][0][5]
+							self.scoreLength = len(self.scores)
+						except Exception:
+							raise FileNotFoundError("An error occurred extracting from channel " + s)
+		if self.data.size == 0 or self.scores.size == 0 or self.times.size == 0:
 			if self.data.size == 0:
-				raise dataObject.ChannelError(c, channels, "EMG channel not found")
+				raise FileNotFoundError("EMG channel named " + c + " not found. Instead found: " + str(channels))
 			else:
-				raise dataObject.ChannelError(s, channels, "Score channel not found")
+				raise FileNotFoundError("Score channel named " + s + " not found. Instead found: " + str(channels))
 		

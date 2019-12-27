@@ -50,6 +50,9 @@ if __name__ == "__main__":
 						print("ImportError:", err)
 						analyzerObject = None
 						import_type = ""
+					except Exception as err:
+						print("RuntimeError:", err)
+						sys.exit()
 				else:
 					print("Seems like you picked something wrong try again!")
 					import_type = ""
