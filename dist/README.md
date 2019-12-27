@@ -9,13 +9,15 @@ Application for mouse EMG analysis and REM sleep muscle characterization
 4. Methodology
 5. Output File
 6. Editing Parameters
+7. Editing or Adding Plugins (Data Import Types)
 
 # 1. Description
 
 This program takes in a dataset file of sleep recordings and analyzes EMG data of each REM phase,
 characterizing all twitches that occur in REM sleep.
 
-The information is outputted into an xlsx spreadsheet for subsequent analysis.
+The information is outputted into an .xlsx spreadsheet for subsequent analysis.
+A Baseline vs Experiment analysis is included as a .xlsm file
 
 # 2. Installation
 
@@ -26,11 +28,15 @@ The information is outputted into an xlsx spreadsheet for subsequent analysis.
 
 Default Parameters are stored in the config file called "parameters.py". They may be edited to suit your needs. **DO NOT** move the file, change the file name or change the parameter names!
 
-When you start up the application, it will open a command line interface. Just follow the instructions and enjoy!
+When you start up the application, it will open a command line interface. 
+You will be asked to select a Data Import Type at the beginning of the program. 
+A Data Import Type sets out the standards for reading data files. The underlying data structure is set forth 
+by the standards found in the Standards folder. 
+Just follow the instructions and enjoy!
 It will prompt you to select the files to be analyzed. You may select one or multiple files in the same folder. Please refer to the file requirements specified by the data import type module you are choosing to use. These file standards may be found in the File Standards folder.
 
 Once the file is successfully read in, the application will move to calculating all sleep phases and
-characterizing twitches. Once the application displays that it has completed the file(s), you may open the xlsx spreadsheets. Opening before the application is finished calculations will prevent it from continuing to write to the sheets and cause a fatal error. Once all files are completely analyzed, the application will close.
+characterizing twitches. Once the application displays that it has completed the file(s), you may open the .xls spreadsheets. Opening before the application is finished calculations will prevent it from continuing to write to the sheets and cause a fatal error. Once all files are completely analyzed, the application will close.
 
 # 4. Methodology
 
@@ -45,11 +51,11 @@ For each file, the application does the following:
 * Examines these "spikes" and groups them into "twitches"
 * As it does so, it characterizes these twitches with duration, average amplitude and total activity (measured by the summation of EMG activity over the course of the twitch).
 * Creates a summarization of data for the whole REM phase
-* Exports data into a sheet in an xlsx document that follows <EMG file name>-output.xlsx and is located in the same folder as the EMG file
+* Exports data into a sheet in an xlsx document that follows <EMG file name>-analysis.xlsx and is located in the same folder as the EMG file
 
 ### (a) REM Isolation Method
 
-To identify and isolate REM phases in the dataset, the application runs through the Sleep Epochs information channel (to simplify the amount of data it must iterate over).	The application identifies groups of Epochs labeled 'R' and determines their corresponding start and end times. This allows the application to align the Epochs as accurately as possible to the correct set of EMG data points. Each REM Phase's corresponding EMG data points are stored in their own arrays.
+To identify and isolate REM phases in the dataset, the application runs through the Sleep Epochs information channel (to simplify the amount of data it must iterate over). The application identifies groups of Epochs labeled 'R' and determines their corresponding start and end times. This allows the application to align the Epochs as accurately as possible to the correct set of EMG data points. Each REM Phase's corresponding EMG data points are stored in their own arrays.
 
 ### (b) Threshold Determination Method
 
@@ -57,17 +63,18 @@ The application preferentially uses the "window" method; failing to succeed in d
 
 **"Window" Method:**
 The application takes the first FIRST_TIME ms of the REM "phase" as the "window". The default is 1500ms. It finds the BASELINE_PERCENTILE-th percentile of this "window" and sets this as the "potential threshold". The default is the 99.99th percentile. To maximize chances that this "potential threshold" is a "good" threshold to use, the application	makes two comparisons:
-  i. To check if the "potential threshold" is not a "twitch" compared to the rest of the window,
+1. To check if the "potential threshold" is not a "twitch" compared to the rest of the window,
     (MEAN*[mean of "window"]+REM_STD*[std of "window"])/["potential threshold"]
     must be greater than TWITCH_THRESHOLD.
-    The default is ([mean of "window"]+2*[std of "window"])/["potential threshold"]
+    1. The default is ([mean of "window"]+2*[std of "window"])/["potential threshold"]
     must be greater than 0.475.
-  ii. To check if the "window" is not at an elevated signal level in comparison to the rest of the 
+ 2. To check if the "window" is not at an elevated signal level in comparison to the rest of the 
     phase (e.g. the "window" contains enough twitches that (i) still passes),
     (MEAN*[mean of "phase"]+SAMPLE_STD*[std of "phase"])/["potential threshold"]
     must be greater than SAMPLE_THRESHOLD.
-    The default is ([mean of "phase"]+2*[std of "phase"])/["potential threshold"]
+    1. The default is ([mean of "phase"]+2*[std of "phase"])/["potential threshold"]
     must be greater than 0.475.
+    
 If either of these conditions fail, the "potential threshold" is deemed not an ideal threshold to use. The application then moves the "window" half of FIRST_TIME ms forward. The default is to move the window 750ms forward. This is to give the "windows" overlap to allow a higher maximum number of calculations and reuse potentially good data points for threshold calculations. If both conditions pass, the application proceeds to twitch characterization using the current "potential threshold" as the threshold value.
 
 If the application runs through the entire "phase" without finding an ideal threshold to use that passes both
@@ -100,6 +107,19 @@ It is formatted as the following:
 The Parameters that can be customized are located in "parameters.config" which MUST be located in the same folder as this application's executable and CANNOT be renamed to anything other than "parameters.config". You can open and edit the config file in any word processing file (notepad is simplest) This is the only location in which these parameters may be edited. Once the application is launched, for as long as the application is running continuously, it will use the parameters as they were when the application was started. If the parameters are subsequently changed, they do not take effect until you restart the application.
 
 It is IMPORTANT that the parameter names are not changed!
+
+# 7. Adding or Editing Plugins (Data Import Types)
+
+Data Import Types are accepted file types and associated file reading methods for analysis. They can be found in
+the plugins folder. It is IMPORTANT that this folder is not moved!
+
+Plugins are dynamically loaded at the time of application launch. They follow the structure 
+set out by the DataObject abstract base class. The DataObject abstract class is NOT a properly 
+usable Data Import Type; rather, it is the superclass that defines how all Data Import Types should 
+behave. This allows the application to be independent of Data Import Types.
+
+Data Import Types must be named the same in the file name as well as the class name, otherwise the 
+plugin loader will experience a fatal import error.
 
 
 <sub>
