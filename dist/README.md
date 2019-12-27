@@ -104,7 +104,7 @@ It is formatted as the following:
 
 # 6. Editing Parameters
 
-The Parameters that can be customized are located in "parameters.config" which MUST be located in the same folder as this application's executable and CANNOT be renamed to anything other than "parameters.config". You can open and edit the config file in any word processing file (notepad is simplest) This is the only location in which these parameters may be edited. Once the application is launched, for as long as the application is running continuously, it will use the parameters as they were when the application was started. If the parameters are subsequently changed, they do not take effect until you restart the application.
+The Parameters that can be customized are located in "parameters.py" which MUST be located in the same folder as this application's executable and CANNOT be renamed to anything other than "parameters.py". You can open and edit the file in any word processing file (notepad is simplest) This is the only location in which these parameters may be edited. Once the application is launched, for as long as the application is running continuously, it will use the parameters as they were when the application was started. If the parameters are subsequently changed, they do not take effect until you restart the application.
 
 It is IMPORTANT that the parameter names are not changed!
 
