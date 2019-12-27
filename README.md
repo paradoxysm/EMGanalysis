@@ -63,17 +63,18 @@ The application preferentially uses the "window" method; failing to succeed in d
 
 **"Window" Method:**
 The application takes the first FIRST_TIME ms of the REM "phase" as the "window". The default is 1500ms. It finds the BASELINE_PERCENTILE-th percentile of this "window" and sets this as the "potential threshold". The default is the 99.99th percentile. To maximize chances that this "potential threshold" is a "good" threshold to use, the application	makes two comparisons:
-  i. To check if the "potential threshold" is not a "twitch" compared to the rest of the window,
+1. To check if the "potential threshold" is not a "twitch" compared to the rest of the window,
     (MEAN*[mean of "window"]+REM_STD*[std of "window"])/["potential threshold"]
     must be greater than TWITCH_THRESHOLD.
-    The default is ([mean of "window"]+2*[std of "window"])/["potential threshold"]
+    1. The default is ([mean of "window"]+2*[std of "window"])/["potential threshold"]
     must be greater than 0.475.
-  ii. To check if the "window" is not at an elevated signal level in comparison to the rest of the 
+ 2. To check if the "window" is not at an elevated signal level in comparison to the rest of the 
     phase (e.g. the "window" contains enough twitches that (i) still passes),
     (MEAN*[mean of "phase"]+SAMPLE_STD*[std of "phase"])/["potential threshold"]
     must be greater than SAMPLE_THRESHOLD.
-    The default is ([mean of "phase"]+2*[std of "phase"])/["potential threshold"]
+    1. The default is ([mean of "phase"]+2*[std of "phase"])/["potential threshold"]
     must be greater than 0.475.
+    
 If either of these conditions fail, the "potential threshold" is deemed not an ideal threshold to use. The application then moves the "window" half of FIRST_TIME ms forward. The default is to move the window 750ms forward. This is to give the "windows" overlap to allow a higher maximum number of calculations and reuse potentially good data points for threshold calculations. If both conditions pass, the application proceeds to twitch characterization using the current "potential threshold" as the threshold value.
 
 If the application runs through the entire "phase" without finding an ideal threshold to use that passes both
