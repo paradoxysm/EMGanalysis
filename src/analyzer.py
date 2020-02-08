@@ -21,11 +21,11 @@ class Analyzer:
 	def __init__(self, dataobject):
 		self.dataobject = dataobject
 		self.parameters = import_module('parameters')
-		
+
 		# Set up tkinter to allow for file selection dialog windows
 		self.root = tk.Tk()
 		self.root.withdraw()
-		
+
 	# Identification of Data Import Type assigned to this Analyzer
 	def __str__(self):
 		return type(self).__name__ + ": " + self.dataobject.__name__
@@ -33,7 +33,7 @@ class Analyzer:
 	# Loop to prompt quitting or remaining on application
 	def defaultQuitPrompt(self):
 		user = ""
-		while user != "n": 
+		while user != "n":
 			user = input("Selected nothing, do you wish to quit? [y/n] ")
 			if user == 'y':
 				print("Goodbye!")
@@ -61,7 +61,7 @@ class Analyzer:
 		# Create a DataObject
 		data = self.dataobject(filepath)
 		print("Dataset is named:", data.createName())
-		
+
 		# Identify the necessary data channels
 		while loading:
 			channel = input("Enter the name of the EMG channel to be analyzed [Default: 'MASS']: ")
@@ -87,7 +87,7 @@ class Analyzer:
 				self.defaultQuitPrompt()
 				print("Try again!")
 		return data
-	
+
 	# Parse the score data to identify REM sleep episodes and return a list of such intervals
 	def parseREM(self, data):
 		print("Parsing through dataset")
@@ -115,7 +115,7 @@ class Analyzer:
 		# Convert to a numpy array
 		rem_idx = np.array(rem_idx)
 		print("Found", num_rem, "REM episodes")
-		return rem_idx	
+		return rem_idx
 
 	# Parse through a REM sleep episode (as determined by a REM sleep interval)
 	#	and determine the threshold for twitches
@@ -126,7 +126,7 @@ class Analyzer:
 		FIRST_SAMPLES = self.parameters.FIRST_TIME / (data.resolution * 1000)
 		# Grab the EMG data for the REM sleep interval
 		rem_data = data.getData(int(rem[0]), k=int(rem[1]))
-		
+
 		# Setup variables
 		start = 0
 		threshold_rem = 0
@@ -139,7 +139,7 @@ class Analyzer:
 					'sample_checks':sample_check,
 					'sample_ratios':[]
 				}
-		
+
 		# Attempt to find an appropriate threshold via the Window method
 		#	Failing to do so at the end, resort to Percentile method
 		while method == '':
@@ -149,28 +149,28 @@ class Analyzer:
 			rem_mean = np.mean(rem_sample)
 			rem_std = np.std(rem_sample)
 			twitch_check = self.parameters.REM_MEAN*rem_mean + self.parameters.REM_STD*rem_std
-			
+
 			checks['thresholds'].append(threshold_rem)
 			checks['rem_means'].append(rem_mean)
 			checks['rem_stds'].append(rem_std)
 			checks['twitch_checks'].append(twitch_check)
 			checks['twitch_ratios'].append(twitch_check/threshold_rem)
 			checks['sample_ratios'].append(sample_check/threshold_rem)
-				
+
 			# Suitable threshold determined
 			if twitch_check / threshold_rem > self.parameters.TWITCH_THRESHOLD and sample_check / threshold_rem > self.parameters.SAMPLE_THRESHOLD:
 				method = 'Window';
-			else:		
+			else:
 				# Move window a half-length forward
 				start = int(round(start + 0.5*FIRST_SAMPLES))
 				# Reaching the end of the REM sleep episode without a satisfactory threshold
 				#	thus resorting to the Percentile method
 				if start + FIRST_SAMPLES > len(rem_data):
-					threshold_rem = np.percentile(thresholds,self.parameters.SAMPLE_PERCENTILE)
+					threshold_rem = np.percentile(checks['thresholds'],self.parameters.SAMPLE_PERCENTILE)
 					method = 'Percentile'
 		print("Threshold for REM episode at", rem, "is set to", threshold_rem, "using the", method, "method")
 		return method, threshold_rem, checks
-		
+
 	# Filter EMG data based on the threshold to return filtered data and unfiltered data
 	#	Includes corresponding indices
 	def filter(self, data, i, rem, threshold):
@@ -178,22 +178,22 @@ class Analyzer:
 		# Grab the EMG data and the indices for the REM sleep interval
 		rem_data = data.getData(int(rem[0]), k=int(rem[1]))
 		rem_indices = data.getIndices(int(rem[0]), k=int(rem[1]))
-		
+
 		#Setup variables
 		filtered = []
 		filtered_indices = []
 		unfiltered = []
 		unfiltered_indices = []
-		
+
 		# Filter the data
 		for i in tqdm(range(len(rem_data))):
 			if rem_data[i] > threshold:
 				filtered.append(rem_data[i])
-				filtered_indices.append(rem_indices[i])			
+				filtered_indices.append(rem_indices[i])
 			else:
 				unfiltered.append(rem_data[i])
 				unfiltered_indices.append(rem_indices[i])
-		
+
 		# Convert arrays to numpy arrays
 		filtered = np.array(filtered)
 		filtered_indices = np.array(filtered_indices)
@@ -201,7 +201,7 @@ class Analyzer:
 		unfiltered_indices = np.array(unfiltered_indices)
 		print("Filtered!")
 		return filtered, filtered_indices, unfiltered, unfiltered_indices
-		
+
 	# Analyze filtered data for a REM sleep episode to characterize twitches
 	def analyze(self, peaks, peaks_idx, i, rem, resolution):
 		print("Analyzing for twitches")
@@ -216,17 +216,17 @@ class Analyzer:
 		if length > 0:
 			# Set up the twitch interval
 			MIN_INTERVAL = self.parameters.MIN_INTERVAL_TIME / (resolution * 1000)
-			
+
 			# Set up variables for a single twitch event
 			event = [peaks[0]]
 			event_idx = [peaks_idx[0]]
-			
+
 			# Iterate through all filtered data and identify twitch events
 			for i in tqdm(range(1, length+1)):
 				# A twitch has been found belonging to the current twitch event
 				if i < length and peaks_idx[i] - event_idx[-1] < MIN_INTERVAL:
 					event.append(peaks[i])
-					event_idx.append(peaks_idx[i])			
+					event_idx.append(peaks_idx[i])
 				# A twitch event has been found to completion (i.e. the
 				#	currently examined twitch belongs to the next event
 				else:
@@ -241,7 +241,7 @@ class Analyzer:
 		print("Twitches analyzed!")
 		print("Found", analysis['num_events'], "twitches")
 		return analysis
-	
+
 	# Select the export folder location
 	def selectExportLocation(self, filepath):
 		location = None
@@ -254,14 +254,14 @@ class Analyzer:
 				print("Try again!")
 		print("Analysis will be exported to", location)
 		return location
-	
+
 	# Format all analysis results and write to an .xls temporary file
 	#	Each sheet represents a single REM sleep episode
 	def export(self, location="", i="", analysis={}, method="", threshold_rem=-1, checks={}, below_avg=-1):
 		# Ensure that all arguments are set up
 		if location == "" or i == "" or len(analysis) == 0 or method == "" or threshold_rem == -1 or len(checks) == 0 or below_avg == -1:
 			raise TypeError("Not enough arguments to properly export data")
-			
+
 		# Format all the analysis results
 		print("Formatting REM episode", i, "for export to", location)
 		events_header = np.array([['Event Start (s)','Avg Amplitude','Summation','Duration (s)']])
@@ -274,12 +274,12 @@ class Analyzer:
 								['Total Duration (s)', time]])
 		event_stats = np.array([['Event Percent', 'Event Time (s)'], [analysis['event%'], analysis['event%']*time],
 								['Baseline Percent', 'Baseline Time (s)'], [analysis['base%'], analysis['base%']*time]])
-		parameter_stats = np.array([['Threshold Percentile', 'Threshold Interval', 'Twich Mean Multiplier', 
+		parameter_stats = np.array([['Threshold Percentile', 'Threshold Interval', 'Twich Mean Multiplier',
 								'Twitch SD Multiplier', 'Sample Mean Multiplier', 'Sample SD Multiplier',
 								'Twitch Ratio', 'Sample Ratio', 'Sample Percentile', 'Minimum Interval Time'],
-								[self.parameters.BASELINE_PERCENTILE, self.parameters.FIRST_TIME, self.parameters.REM_MEAN, 
-								self.parameters.REM_STD, self.parameters.SAMPLE_MEAN, self.parameters.SAMPLE_STD, 
-								self.parameters.TWITCH_THRESHOLD, self.parameters.SAMPLE_THRESHOLD, 
+								[self.parameters.BASELINE_PERCENTILE, self.parameters.FIRST_TIME, self.parameters.REM_MEAN,
+								self.parameters.REM_STD, self.parameters.SAMPLE_MEAN, self.parameters.SAMPLE_STD,
+								self.parameters.TWITCH_THRESHOLD, self.parameters.SAMPLE_THRESHOLD,
 								self.parameters.SAMPLE_PERCENTILE, self.parameters.MIN_INTERVAL_TIME]])
 		if method == "Window" or method == "Percentile":
 			method_stats = np.array([['Method', method]])
@@ -291,11 +291,11 @@ class Analyzer:
 										checks['twitch_ratios'], checks['sample_ratios']), axis=1)
 		else:
 			raise RuntimeError("Something went wrong with the method type!")
-		
+
 		sheet_name = "REM " + i.split('/')[0]
-		
+
 		print("Exporting to", location)
-		
+
 		# Check if the file exists already (Analysis was done previously or is currently ongoing)
 		if not os.path.isfile(location):
 			wb = Workbook()
@@ -320,10 +320,10 @@ class Analyzer:
 				wb = Workbook()
 			else:
 				wb = copy(rb)
-		
+
 		# Add a sheet for the REM sleep episode
 		ws = wb.add_sheet(sheet_name)
-		
+
 		# Write all the data into the sheet
 		for row in range(len(events_header)):
 			for col in range(len(events_header[row])):
@@ -351,18 +351,18 @@ class Analyzer:
 				ws.write(row, col, phase_header[row-9][col-5])
 		for row in range(10, 10+len(phase_stats)):
 			for col in range(5, 5+len(phase_stats[row-10])):
-				ws.write(row, col, phase_stats[row-10][col-5])		
+				ws.write(row, col, phase_stats[row-10][col-5])
 		for row in range(11, 11+len(checks_header)):
 			for col in range(5, 5+len(checks_header[row-11])):
 				ws.write(row, col, checks_header[row-11][col-5])
 		for row in range(12, 12+len(checks_stats)):
 			for col in range(5, 5+len(checks_stats[row-12])):
 				ws.write(row, col, checks_stats[row-12][col-5])
-				
+
 		wb.save(location)
 		print("Exported!")
 		return True
-		
+
 	# Convert an xls file to an xlsx file
 	#	Used at the end of analysis to allow compatibility with the xlsm Analysis Macro
 	def xls2xlsx(self, location):
@@ -373,7 +373,7 @@ class Analyzer:
 		wb.Close()                               		#FileFormat = 56 is for .xls extension
 		excel.Application.Quit()
 		os.remove(location)
-	
+
 	# Run the Analyzer
 	def run(self):
 		print("-"*30)
@@ -386,9 +386,9 @@ class Analyzer:
 			sys.exit()
 		print("Successfully loaded self.parameters")
 		print("-"*30)
-		
+
 		file_paths = self.selectFiles()
-		
+
 		for file in file_paths:
 			data = self.loadFile(file)
 			location = self.selectExportLocation(file) + '/' + data.name + '-analysis.xls'

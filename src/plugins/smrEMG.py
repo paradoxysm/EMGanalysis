@@ -11,15 +11,15 @@ class smrEMG(dataObject.DataObject):
 
 	def __init__(self, filepath, name=""):
 		super().__init__(filepath, name=name)
-		
+
 	def __str__(self):
 		return type(self).__name__ + ": " + self.name + " at " + self.filepath
-		
+
 	# Set up a default name based on the file name
 	def createName(self):
 		self.name = self.filepath.split('/')[-1].split('.mat')[0]
 		return self.name
-		
+
 	# Read data out of the associated file
 	def read(self, c="", s=""):
 		if c == "" or s == "":
@@ -32,7 +32,7 @@ class smrEMG(dataObject.DataObject):
 		for field in matfile.keys():
 			if '_Ch' in field:
 				channels.append(matfile[field][0][0][0][0])
-		
+
 			for field in matfile.keys():
 				if '_Ch' in field:
 					if c == matfile[field][0][0][0][0]:
@@ -41,7 +41,8 @@ class smrEMG(dataObject.DataObject):
 							self.indices = np.arange(self.data.size)
 							self.resolution = matfile[field][0][0][2][0][0]
 							self.length = matfile[field][0][0][7][0][0]
-						except Exception:
+						except Exception as e:
+							print(e)
 							raise FileNotFoundError("An error occurred extracting from channel " + c)
 					elif s == matfile[field][0][0][0][0]:
 						try:
@@ -55,4 +56,3 @@ class smrEMG(dataObject.DataObject):
 				raise FileNotFoundError("EMG channel named " + c + " not found. Instead found: " + str(channels))
 			else:
 				raise FileNotFoundError("Score channel named " + s + " not found. Instead found: " + str(channels))
-		
