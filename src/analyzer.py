@@ -216,6 +216,7 @@ class Analyzer:
 		if length > 0:
 			# Set up the twitch interval
 			MIN_INTERVAL = self.parameters.MIN_INTERVAL_TIME / (resolution * 1000)
+			MIN_DURATION = self.parameters.MIN_TWITCH_DURATION / (resolution * 1000)
 
 			# Set up variables for a single twitch event
 			event = [peaks[0]]
@@ -230,11 +231,13 @@ class Analyzer:
 				# A twitch event has been found to completion (i.e. the
 				#	currently examined twitch belongs to the next event
 				else:
-					analysis['event_starts'].append(event_idx[0] * resolution)
-					analysis['num_events'] += 1
-					analysis['avg_amp'].append(np.mean(event))
-					analysis['int_amp'].append(np.sum(event))
-					analysis['durations'].append(len(event) * resolution)
+					# The twitch event meets the minimum duration criteria
+					if event_idx[-1] - event_idx[0] >= MIN_DURATION:
+						analysis['event_starts'].append(event_idx[0] * resolution)
+						analysis['num_events'] += 1
+						analysis['avg_amp'].append(np.mean(event))
+						analysis['int_amp'].append(np.sum(event))
+						analysis['durations'].append((event_idx[-1] - event_idx[0]) * resolution)
 					if i < length:
 						event = [peaks[i]]
 						event_idx = [peaks_idx[i]]
@@ -413,7 +416,8 @@ class Analyzer:
 					print("RuntimeError:", err)
 					sys.exit()
 			print("Completed analyzing file at", file)
-			print("Converting .xls file to .xlsx")
-			self.xls2xlsx(location)
+			if len(rem_idx) > 0:
+				print("Converting .xls file to .xlsx")
+				self.xls2xlsx(location)
 			print("-"*30)
 		print("Completed all requested analyses")

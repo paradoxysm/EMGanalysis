@@ -30,6 +30,9 @@ SAMPLE_PERCENTILE = 0.5
 #Minimim time (in ms) between spikes to be registered as separate twitches: Must be a non-negative integer
 MIN_INTERVAL_TIME = 20
 
+#Minimim twitch duration (in ms): Must be a non-negative integer
+MIN_TWITCH_DURATION = 5
+
 #Keyword for REM sleep classification: Must be a string
 REM = 'R'
 
@@ -41,7 +44,7 @@ class ParameterError(Exception):
 	def __init__(self, parameter, message):
 		self.parameter = parameter
 		self.message = message
-		
+
 
 def validateParameters():
 	if  not (isinstance(BASELINE_PERCENTILE, float) or isinstance(BASELINE_PERCENTILE, int)) or \
@@ -57,15 +60,17 @@ def validateParameters():
 		raise ParameterError("REM_STD","Must be a non-negative number")
 	if not (isinstance(SAMPLE_STD, float) or isinstance(SAMPLE_STD, int)) or SAMPLE_STD < 0:
 		raise ParameterError("SAMPLE_STD","Must be a non-negative number")
-	if not (isinstance(TWITCH_THRESHOLD, float) or isinstance(TWITCH_THRESHOLD, int)) or TWITCH_THRESHOLD < 0:	
+	if not (isinstance(TWITCH_THRESHOLD, float) or isinstance(TWITCH_THRESHOLD, int)) or TWITCH_THRESHOLD < 0:
 		raise ParameterError("TWITCH_THRESHOLD","Must be a non-negative number")
-	if not (isinstance(SAMPLE_THRESHOLD, float) or isinstance(SAMPLE_THRESHOLD, int)) or SAMPLE_THRESHOLD < 0:	
+	if not (isinstance(SAMPLE_THRESHOLD, float) or isinstance(SAMPLE_THRESHOLD, int)) or SAMPLE_THRESHOLD < 0:
 		raise ParameterError("SAMPLE_THRESHOLD","Must be a non-negative number")
 	if not (isinstance(SAMPLE_PERCENTILE, float) or isinstance(SAMPLE_PERCENTILE, int)) or \
-			SAMPLE_PERCENTILE < 0 or SAMPLE_PERCENTILE > 1:	
+			SAMPLE_PERCENTILE < 0 or SAMPLE_PERCENTILE > 1:
 		raise ParameterError("SAMPLE_PERCENTILE","Must be between 0 and 1, inclusive")
-	if not isinstance(MIN_INTERVAL_TIME, int) or SAMPLE_PERCENTILE < 0:	
+	if not isinstance(MIN_INTERVAL_TIME, int) or MIN_INTERVAL_TIME < 0:
 		raise ParameterError("MIN_INTERVAL_TIME","Must be a non-negative integer")
+	if not isinstance(MIN_TWITCH_DURATION, int) or MIN_TWITCH_DURATION < 0:
+		raise ParameterError("MIN_TWITCH_DURATION","Must be a non-negative integer")
 	if not isinstance(REM, str):
 		raise ParameterError("REM","Must be a string")
 	return True
