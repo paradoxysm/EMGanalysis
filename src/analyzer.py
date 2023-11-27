@@ -95,22 +95,21 @@ class Analyzer:
 		rem_start = 0
 		rem_end = 0
 		rem_idx = []
-		for i in tqdm(range(data.scoreLength+1)):
+		for i in tqdm(range(data.scoreLength)):
 			# If the epoch is classified as REM, set up the REM sleep interval
 			# 	and expand it as the REM sleep episode continues
-			if i < data.scoreLength and data.getScores(i) == self.parameters.REM:
-				if rem_end - rem_start <= 0:
+			if data.getScores(i) == self.parameters.REM:
+				if rem_end - rem_start <= 0 :
 					rem_start = i
 					rem_end = i
 				rem_end += 1
-			# Otherwise, if the REM episode ends, calculate the sample indices for
+            # If the REM episode ends or at the end of the recording, calculate the sample indices for
 			#	the REM sleep interval
-			else:
-				if rem_end - rem_start > 0:
-					rem_start_time = floor(data.getTimes(rem_start) / data.resolution)+1
-					rem_end_time = floor(data.getTimes(rem_end) / data.resolution)
-					rem_idx.append([rem_start_time, rem_end_time])
-					rem_start = rem_end
+			if (data.getScores(i) != self.parameters.REM or i == data.scoreLength-1) and rem_end - rem_start > 0 :
+				rem_start_time = floor(data.getTimes(rem_start) / data.resolution)+1
+				rem_end_time = floor(data.getTimes(rem_end) / data.resolution)
+				rem_idx.append([rem_start_time, rem_end_time])
+				rem_start = rem_end
 		num_rem = len(rem_idx)
 		# Convert to a numpy array
 		rem_idx = np.array(rem_idx)

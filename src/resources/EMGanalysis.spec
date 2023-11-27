@@ -4,7 +4,7 @@ block_cipher = None
 
 
 a = Analysis(['..\\main.py'],
-             pathex=['C:\\Users\\jfw20\\Desktop\\EMGanalysis\\src'],
+             pathex=['..\\..\\src'],
              binaries=[],
              datas=[],
              hiddenimports=['scipy.io', 'numpy', 'tqdm', 'xlwt', 'xlrd' 'xlutils'],
