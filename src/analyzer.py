@@ -107,7 +107,9 @@ class Analyzer:
 			#	the REM sleep interval
 			if (data.getScores(i) != self.parameters.REM or i == data.scoreLength-1) and rem_end - rem_start > 0 :
 				rem_start_time = floor(data.getTimes(rem_start) / data.resolution)+1
-				rem_end_time = floor(data.getTimes(rem_end) / data.resolution)
+				if rem_end >= data.scoreLength:
+					rem_end_time = -1
+				else: rem_end_time = floor(data.getTimes(rem_end) / data.resolution)
 				rem_idx.append([rem_start_time, rem_end_time])
 				rem_start = rem_end
 		num_rem = len(rem_idx)
